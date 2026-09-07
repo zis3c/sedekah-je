@@ -32,8 +32,14 @@ function getAppBaseUrl(): string {
 export async function GET() {
 	try {
 		await requireAdminSession();
-	} catch {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	} catch (error) {
+		if (
+			error instanceof Error &&
+			error.message === "Unauthorized: Admin access required"
+		) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		throw error;
 	}
 
 	const clientId = process.env.THREADS_API_CLIENT_ID;

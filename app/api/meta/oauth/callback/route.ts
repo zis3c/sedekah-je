@@ -26,8 +26,14 @@ function getAppBaseUrl(): string {
 export async function GET(request: NextRequest) {
 	try {
 		await requireAdminSession();
-	} catch {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+	} catch (error) {
+		if (
+			error instanceof Error &&
+			error.message === "Unauthorized: Admin access required"
+		) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		throw error;
 	}
 
 	const code = request.nextUrl.searchParams.get("code");
