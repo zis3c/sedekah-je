@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { requireAdminSession } from "@/lib/auth-helpers";
+import { requireAdminApiSession } from "@/lib/auth-helpers";
 
 const OAUTH_STATE_COOKIE = "meta_oauth_state";
 const THREADS_OAUTH_AUTHORIZE_ENDPOINT = "https://threads.net/oauth/authorize";
@@ -30,16 +30,9 @@ function getAppBaseUrl(): string {
 }
 
 export async function GET() {
-	try {
-		await requireAdminSession();
-	} catch (error) {
-		if (
-			error instanceof Error &&
-			error.message === "Unauthorized: Admin access required"
-		) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-		throw error;
+	const adminSession = await requireAdminApiSession();
+	if (!adminSession.ok) {
+		return adminSession.response;
 	}
 
 	const clientId = process.env.THREADS_API_CLIENT_ID;

@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { persistThreadsOAuthToken } from "@/app/api/meta/_lib/meta-oauth-token-store";
-import { requireAdminSession } from "@/lib/auth-helpers";
+import { requireAdminApiSession } from "@/lib/auth-helpers";
 
 const OAUTH_STATE_COOKIE = "meta_oauth_state";
 const META_TOKEN_ENDPOINT = "https://graph.threads.net/oauth/access_token";
@@ -24,16 +24,11 @@ function getAppBaseUrl(): string {
 }
 
 export async function GET(request: NextRequest) {
-	try {
-		await requireAdminSession();
-	} catch (error) {
-		if (
-			error instanceof Error &&
-			error.message === "Unauthorized: Admin access required"
-		) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-		throw error;
+	const adminSession = await requireAdminApiSession();
+	if (!adminSession.ok) {
+		const response = adminSession.response;
+		response.cookies.delete(OAUTH_STATE_COOKIE);
+		return response;
 	}
 
 	const code = request.nextUrl.searchParams.get("code");
